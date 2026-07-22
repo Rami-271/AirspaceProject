@@ -33,7 +33,7 @@ namespace AirSimulation
             {
                 departureQueue.Enqueue(flight);
                 flight.Status = FlightStatus.InDepartureQueue;
-                eventLog.Add($"{flight.Aircraft.Flightnumber} entered the departure queue.");
+                eventLog.Add($"{flight.Aircraft.FlightNumber} entered the departure queue.");
             }
         }
 
@@ -48,7 +48,7 @@ namespace AirSimulation
                 {
                     if (!flightAdded && !existingFlight.IsEmergency())
                     {
-                        newQueue.Enqueue(existingFlight);
+                        newQueue.Enqueue(flight);
                         flightAdded = true;
                     }
 
@@ -96,12 +96,12 @@ namespace AirSimulation
             return false;
         }
 
-        private bool ProcessArrival(Airport.airport)
+        private bool ProcessArrival(Airport airport)
         {
             if (!airport.HasAvailableRunway())
             {
                 eventLog.Add("No runway is available for the next arrival.");
-                retur false;
+                return false;
             }
 
             Runway runway = airport.GetAvailableRunway();
