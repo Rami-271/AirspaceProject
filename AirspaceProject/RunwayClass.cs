@@ -39,7 +39,7 @@ namespace AirSimulation
                 throw new ArgumentException("Runway number cannot be empty.");
             }
 
-            this.runwayNumber = runwayNumber;
+            this.runwayNumber = runwayNumber.Trim().ToUpper();
             currentFlight = null;
             isAvailable = true;
         }
