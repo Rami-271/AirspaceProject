@@ -298,20 +298,3 @@ Possible future improvements include:
 
 This project does not use third-party libraries. It uses the standard C# and .NET class libraries.
 
-## AI-Assisted Work and Verification
-
-AI-assisted suggestions were used during parts of code review and documentation. The team reviewed and modified the suggestions to match the course notes, class examples, project scope, and coding level.
-
-Verification included:
-
-- Reviewing each class and method
-- Building the project in Visual Studio
-- Running the built-in six-flight sample simulation
-- Checking emergency priority
-- Checking runway and gate assignments
-- Checking gate-waiting behavior
-- Checking flight status changes
-- Testing valid and invalid user input
-- Reviewing the event log and final flight results
-
-The team remains responsible for understanding, testing, and explaining all submitted code and documentation.
