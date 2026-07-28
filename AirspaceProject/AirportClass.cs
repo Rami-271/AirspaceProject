@@ -43,7 +43,7 @@ namespace AirSimulation
                 throw new ArgumentException("Airport name cannot be empty.");
             }
 
-            this.airportName = airportName;
+            this.airportName = airportName.Trim();
             runways = new List<Runway>();
             gates = new List<Gate>();
             flights = new List<Flight>();
@@ -120,6 +120,12 @@ namespace AirSimulation
                     "Only departure flights can be assigned to a departure gate.");
             }
 
+            if (HasFlight(flight.Aircraft.FlightNumber))
+            {
+                throw new InvalidOperationException(
+                    "The flight has already been added to the airport.");
+            }
+
             if (HasGateForFlight(flight))
             {
                 throw new InvalidOperationException(
@@ -140,7 +146,38 @@ namespace AirSimulation
             }
 
             gate.AssignFlight(flight);
-            flight.Status = FlightStatus.ReadyForDeparture;
+            flight.UpdateStatus(FlightStatus.ReadyForDeparture);
+
+            scheduler.AddEvent(
+                $"{flight.Aircraft.FlightNumber} was assigned to " +
+                $"departure gate {gate.GateNumber}.");
+        }
+
+        public void PrepareFlightForDeparture(Flight flight)
+        {
+            if (flight == null)
+            {
+                throw new ArgumentNullException("flight");
+            }
+
+            if (!ContainsFlight(flight))
+            {
+                throw new InvalidOperationException(
+                    "The flight is not part of this airport.");
+            }
+
+            if (!HasGateForFlight(flight))
+            {
+                throw new InvalidOperationException(
+                    "The flight must have an assigned gate.");
+            }
+
+            flight.PrepareForDeparture();
+
+            scheduler.AddEvent(
+                $"{flight.Aircraft.FlightNumber} is ready for departure.");
+
+            scheduler.AddDepartureFlight(flight);
         }
 
         public bool ProcessNextFlight()
@@ -204,9 +241,16 @@ namespace AirSimulation
 
         public bool HasRunway(string runwayNumber)
         {
+            if (string.IsNullOrWhiteSpace(runwayNumber))
+            {
+                return false;
+            }
+
+            string selectedRunway = runwayNumber.Trim().ToUpper();
+
             foreach (Runway runway in runways)
             {
-                if (runway.RunwayNumber == runwayNumber)
+                if (runway.RunwayNumber == selectedRunway)
                 {
                     return true;
                 }
@@ -217,9 +261,17 @@ namespace AirSimulation
 
         public Runway GetRunway(string runwayNumber)
         {
+            if (string.IsNullOrWhiteSpace(runwayNumber))
+            {
+                throw new ArgumentException(
+                    "Runway number cannot be empty.");
+            }
+
+            string selectedRunway = runwayNumber.Trim().ToUpper();
+
             foreach (Runway runway in runways)
             {
-                if (runway.RunwayNumber == runwayNumber)
+                if (runway.RunwayNumber == selectedRunway)
                 {
                     return runway;
                 }
@@ -231,9 +283,16 @@ namespace AirSimulation
 
         public bool HasGate(string gateNumber)
         {
+            if (string.IsNullOrWhiteSpace(gateNumber))
+            {
+                return false;
+            }
+
+            string selectedGate = gateNumber.Trim().ToUpper();
+
             foreach (Gate gate in gates)
             {
-                if (gate.GateNumber == gateNumber)
+                if (gate.GateNumber == selectedGate)
                 {
                     return true;
                 }
@@ -244,9 +303,16 @@ namespace AirSimulation
 
         public Gate GetGate(string gateNumber)
         {
+            if (string.IsNullOrWhiteSpace(gateNumber))
+            {
+                throw new ArgumentException("Gate number cannot be empty.");
+            }
+
+            string selectedGate = gateNumber.Trim().ToUpper();
+
             foreach (Gate gate in gates)
             {
-                if (gate.GateNumber == gateNumber)
+                if (gate.GateNumber == selectedGate)
                 {
                     return gate;
                 }
@@ -258,9 +324,16 @@ namespace AirSimulation
 
         public bool HasFlight(string flightNumber)
         {
+            if (string.IsNullOrWhiteSpace(flightNumber))
+            {
+                return false;
+            }
+
+            string selectedFlight = flightNumber.Trim().ToUpper();
+
             foreach (Flight flight in flights)
             {
-                if (flight.Aircraft.FlightNumber == flightNumber)
+                if (flight.Aircraft.FlightNumber == selectedFlight)
                 {
                     return true;
                 }
@@ -271,9 +344,17 @@ namespace AirSimulation
 
         public Flight GetFlight(string flightNumber)
         {
+            if (string.IsNullOrWhiteSpace(flightNumber))
+            {
+                throw new ArgumentException(
+                    "Flight number cannot be empty.");
+            }
+
+            string selectedFlight = flightNumber.Trim().ToUpper();
+
             foreach (Flight flight in flights)
             {
-                if (flight.Aircraft.FlightNumber == flightNumber)
+                if (flight.Aircraft.FlightNumber == selectedFlight)
                 {
                     return flight;
                 }
@@ -318,6 +399,19 @@ namespace AirSimulation
 
             throw new InvalidOperationException(
                 "The flight does not have an assigned gate.");
+        }
+
+        private bool ContainsFlight(Flight selectedFlight)
+        {
+            foreach (Flight flight in flights)
+            {
+                if (flight == selectedFlight)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public Runway[] GetRunways()
