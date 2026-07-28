@@ -22,7 +22,7 @@ namespace AirSimulation
 
         public override string GetDescription()
         {
-            return $"{FlightNumber} - Commercial Aircraft, " + $"Passengers: {PassengerCount}";
+            string description = $"{FlightNumber} - Commercial Aircraft, " + $"Passengers: {PassengerCount}";
 
             if (IsEmergency)
             {
