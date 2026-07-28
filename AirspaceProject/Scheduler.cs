@@ -31,19 +31,49 @@ namespace AirSimulation
             }
             else
             {
-                departureQueue.Enqueue(flight);
-                flight.Status = FlightStatus.InDepartureQueue;
-                eventLog.Add($"{flight.Aircraft.FlightNumber} entered the departure queue.");
+                AddDepartureFlight(flight);
             }
+        }
+
+        public void AddDepartureFlight(Flight flight)
+        {
+            if (flight == null)
+            {
+                throw new ArgumentNullException("flight");
+            }
+
+            if (flight.Type != FlightType.Departure)
+            {
+                throw new InvalidOperationException(
+                    "Only departure flights can enter the departure queue.");
+            }
+
+            if (flight.Status != FlightStatus.ReadyForDeparture)
+            {
+                throw new InvalidOperationException(
+                    "The flight is not ready for departure.");
+            }
+
+            departureQueue.Enqueue(flight);
+            flight.UpdateStatus(FlightStatus.InDepartureQueue);
+
+            eventLog.Add(
+                $"{flight.Aircraft.FlightNumber} entered the departure queue.");
         }
 
         private void AddToLandingQueue(Flight flight)
         {
+            if (flight.Status != FlightStatus.ReadyForLanding)
+            {
+                throw new InvalidOperationException(
+                    "The flight is not ready for the landing queue.");
+            }
+
             if (flight.IsEmergency())
             {
                 Queue<Flight> newQueue = new Queue<Flight>();
                 bool flightAdded = false;
-            
+
                 foreach (Flight existingFlight in landingQueue)
                 {
                     if (!flightAdded && !existingFlight.IsEmergency())
@@ -52,7 +82,7 @@ namespace AirSimulation
                         flightAdded = true;
                     }
 
-                    newQueue.Enqueue(existingFlight);                    
+                    newQueue.Enqueue(existingFlight);
                 }
 
                 if (!flightAdded)
@@ -62,16 +92,19 @@ namespace AirSimulation
 
                 landingQueue = newQueue;
 
-                eventLog.Add($"Emergency alert: {flight.Aircraft.FlightNumber} received landing priority.");
+                eventLog.Add(
+                    $"Emergency alert: {flight.Aircraft.FlightNumber} " +
+                    "received landing priority.");
             }
             else
             {
                 landingQueue.Enqueue(flight);
             }
 
-            flight.Status = FlightStatus.InLandingQueue;
+            flight.UpdateStatus(FlightStatus.InLandingQueue);
 
-            eventLog.Add($"{flight.Aircraft.FlightNumber} entered the landing queue.");
+            eventLog.Add(
+                $"{flight.Aircraft.FlightNumber} entered the landing queue.");
         }
 
         public bool ProcessNextFlight(Airport airport)
@@ -100,36 +133,68 @@ namespace AirSimulation
         {
             if (!airport.HasAvailableRunway())
             {
-                eventLog.Add("No runway is available for the next arrival.");
+                eventLog.Add(
+                    "No runway is available for the next arrival.");
                 return false;
             }
 
             Runway runway = airport.GetAvailableRunway();
+
+            if (airport.ConflictDetector.HasRunwayConflict(runway))
+            {
+                eventLog.Add(
+                    $"Runway {runway.RunwayNumber} has a conflict.");
+                return false;
+            }
+
             Flight flight = landingQueue.Dequeue();
 
             runway.AssignFlight(flight);
-            flight.Status = FlightStatus.AssignedRunway;
+            flight.UpdateStatus(FlightStatus.AssignedRunway);
 
-            eventLog.Add($"{flight.Aircraft.FlightNumber} was assigned to runway {runway.RunwayNumber}.");
-            flight.Status = FlightStatus.Landed;
+            eventLog.Add(
+                $"{flight.Aircraft.FlightNumber} was assigned to " +
+                $"runway {runway.RunwayNumber}.");
 
-            eventLog.Add($"{flight.Aircraft.FlightNumber} landed on runway {runway.RunwayNumber}.");
+            flight.UpdateStatus(FlightStatus.Landed);
+
+            eventLog.Add(
+                $"{flight.Aircraft.FlightNumber} landed on " +
+                $"runway {runway.RunwayNumber}.");
+
             runway.ReleaseRunway();
 
             if (!airport.HasAvailableGate())
             {
                 gateWaitingQueue.Enqueue(flight);
+                flight.UpdateStatus(FlightStatus.WaitingForGate);
 
-                eventLog.Add($"{flight.Aircraft.FlightNumber} is waiting for an available gate.");
+                eventLog.Add(
+                    $"{flight.Aircraft.FlightNumber} is waiting for " +
+                    "an available gate.");
             }
             else
             {
                 Gate gate = airport.GetAvailableGate();
 
-                gate.AssignFlight(flight);
-                flight.Status = FlightStatus.AssignedGate;
+                if (airport.ConflictDetector.HasGateConflict(gate))
+                {
+                    gateWaitingQueue.Enqueue(flight);
+                    flight.UpdateStatus(FlightStatus.WaitingForGate);
 
-                eventLog.Add($"{flight.Aircraft.FlightNumber} was assigned to gate {gate.GateNumber}.");
+                    eventLog.Add(
+                        $"{flight.Aircraft.FlightNumber} is waiting for " +
+                        "an available gate.");
+                }
+                else
+                {
+                    gate.AssignFlight(flight);
+                    flight.UpdateStatus(FlightStatus.AssignedGate);
+
+                    eventLog.Add(
+                        $"{flight.Aircraft.FlightNumber} was assigned to " +
+                        $"gate {gate.GateNumber}.");
+                }
             }
 
             return true;
@@ -141,14 +206,17 @@ namespace AirSimulation
 
             if (!airport.HasGateForFlight(flight))
             {
-                eventLog.Add($"{flight.Aircraft.FlightNumber} cannot depart because it has no assigned gate.");
+                eventLog.Add(
+                    $"{flight.Aircraft.FlightNumber} cannot depart " +
+                    "because it has no assigned gate.");
 
                 return false;
             }
 
             if (!airport.HasAvailableRunway())
             {
-                eventLog.Add("No runway is available for the next departure.");
+                eventLog.Add(
+                    "No runway is available for the next departure.");
 
                 return false;
             }
@@ -156,24 +224,39 @@ namespace AirSimulation
             Gate gate = airport.GetGateForFlight(flight);
             Runway runway = airport.GetAvailableRunway();
 
+            if (airport.ConflictDetector.HasRunwayConflict(runway))
+            {
+                eventLog.Add(
+                    $"Runway {runway.RunwayNumber} has a conflict.");
+                return false;
+            }
+
             departureQueue.Dequeue();
 
             runway.AssignFlight(flight);
-            flight.Status = FlightStatus.AssignedRunway;
+            flight.UpdateStatus(FlightStatus.AssignedRunway);
 
-            eventLog.Add($"{flight.Aircraft.FlightNumber} was assigned to runway {runway.RunwayNumber} for departure.");
+            eventLog.Add(
+                $"{flight.Aircraft.FlightNumber} was assigned to " +
+                $"runway {runway.RunwayNumber} for departure.");
 
             gate.ReleaseGate();
 
-            flight.Status = FlightStatus.Departed;
+            eventLog.Add(
+                $"Gate {gate.GateNumber} was released by " +
+                $"{flight.Aircraft.FlightNumber}.");
 
-            eventLog.Add($"{flight.Aircraft.FlightNumber} departed from runway {runway.RunwayNumber}.");
+            flight.UpdateStatus(FlightStatus.Departed);
+
+            eventLog.Add(
+                $"{flight.Aircraft.FlightNumber} departed from " +
+                $"runway {runway.RunwayNumber}.");
 
             runway.ReleaseRunway();
+            flight.UpdateStatus(FlightStatus.Complete);
 
-            flight.Status = FlightStatus.Complete;
-
-            eventLog.Add($"{flight.Aircraft.FlightNumber} is complete.");
+            eventLog.Add(
+                $"{flight.Aircraft.FlightNumber} is complete.");
 
             AssignWaitingFlightsToGates(airport);
 
@@ -192,18 +275,37 @@ namespace AirSimulation
             while (gateWaitingQueue.Count > 0 &&
                 airport.HasAvailableGate())
             {
-                Flight flight = gateWaitingQueue.Dequeue();
+                Flight flight = gateWaitingQueue.Peek();
                 Gate gate = airport.GetAvailableGate();
 
-                gate.AssignFlight(flight);
-                flight.Status = FlightStatus.AssignedGate;
+                if (airport.ConflictDetector.HasGateConflict(gate))
+                {
+                    return assignedCount;
+                }
 
-                eventLog.Add($"{flight.Aircraft.FlightNumber} was assigned to gate {gate.GateNumber}.");
+                gateWaitingQueue.Dequeue();
+                gate.AssignFlight(flight);
+                flight.UpdateStatus(FlightStatus.AssignedGate);
+
+                eventLog.Add(
+                    $"{flight.Aircraft.FlightNumber} was assigned to " +
+                    $"gate {gate.GateNumber}.");
 
                 assignedCount++;
             }
 
             return assignedCount;
+        }
+
+        public void AddEvent(string eventMessage)
+        {
+            if (string.IsNullOrWhiteSpace(eventMessage))
+            {
+                throw new ArgumentException(
+                    "Event message cannot be empty.");
+            }
+
+            eventLog.Add(eventMessage);
         }
 
         public Flight[] GetLandingQueue()
@@ -225,6 +327,5 @@ namespace AirSimulation
         {
             return eventLog.ToArray();
         }
-        
     }
 }
