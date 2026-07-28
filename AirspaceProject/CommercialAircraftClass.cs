@@ -6,7 +6,7 @@ namespace AirSimulation
 {
     public class CommercialAircraft : Aircraft
     {
-        public int PassengerCount { get; set; }
+        public int PassengerCount { get; }
 
         public CommercialAircraft(string flightNumber, bool isEmergency, int passengerCount) : base(flightNumber, isEmergency)
         {
@@ -18,11 +18,18 @@ namespace AirSimulation
             PassengerCount = passengerCount;
         }
 
-        public override string AircraftType => "Commercial";
+        public override string AircraftType => "Commercial Aircraft";
 
         public override string GetDescription()
         {
-            return $"{FlightNumber} - Commercial Aircraft, Passengers: {PassengerCount}";
+            return $"{FlightNumber} - Commercial Aircraft, " + $"Passengers: {PassengerCount}";
+
+            if (IsEmergency)
+            {
+                description += ", Emergency";
+            }
+
+            return description;
         }
     }
 }
