@@ -9,7 +9,7 @@ namespace AirSimulation
         public PrivateAircraft(string flightNumber, bool isEmergency, string ownerName)
             : base(flightNumber, isEmergency)
         {
-            if (string.IsnullOrWhiteSpace(ownerName))
+            if (string.IsNullOrWhiteSpace(ownerName))
             {
                 throw new ArgumentException("Owner name cannot be empty.");
             }
