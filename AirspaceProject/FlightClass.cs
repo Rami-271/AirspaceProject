@@ -24,7 +24,7 @@ namespace AirSimulation
             }
             else
             {
-                Status = FlightStatus.Created
+                Status = FlightStatus.Created;
             }
         }
 
