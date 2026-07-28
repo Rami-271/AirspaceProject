@@ -45,6 +45,10 @@ namespace AirSimulation
             {
                 return true;
             }
+            if (flight.Status != FlightStatus.ReadyForDeparture)
+            {
+                return true;
+            }
 
             return false;
         }
