@@ -4,7 +4,8 @@ namespace AirSimulation
 {
     public enum FlightType
     {
-        Arrival, Departure
+        Arrival,
+        Departure
     } 
 }
 
