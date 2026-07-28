@@ -39,7 +39,7 @@ namespace AirSimulation
                 throw new ArgumentException("Gate number cannot be empty.");
             }
 
-            this.gateNumber = gateNumber;
+            this.gateNumber = gateNumber.Trim().ToUpper();
             currentFlight = null;
             isAvailable = true;
         }
