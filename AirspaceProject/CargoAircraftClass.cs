@@ -23,7 +23,7 @@ namespace AirSimulation
 
         public override string GetDescription()
         {
-            return $"{FlightNumber} - Cargo Aircraft, " + $"Cargo Weight: {CargoWeight} lbs";
+            string description = $"{FlightNumber} - Cargo Aircraft, " + $"Cargo Weight: {CargoWeight} lbs";
 
             if (IsEmergency)
             {
