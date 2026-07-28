@@ -6,8 +6,8 @@ namespace AirSimulation
 {
     public abstract class Aircraft
     {
-        public string FlightNumber { get; set; }
-        public bool IsEmergency { get; set; }
+        public string FlightNumber { get; }
+        public bool IsEmergency { get; }
 
         protected Aircraft(string flightNumber, bool isEmergency)
         {
@@ -16,7 +16,7 @@ namespace AirSimulation
                 throw new ArgumentException("Flight number cannot be empty.");
             }
 
-            FlightNumber = flightNumber;
+            FlightNumber = flightNumber.Trim().ToUpper();
             IsEmergency = isEmergency;
         }
 
@@ -24,6 +24,10 @@ namespace AirSimulation
 
         public virtual string GetDescription()
         {
+            if (IsEmergency)
+            {
+                return $"{FlightNumber} - {AircraftType}, Emergency";
+            }
             return $"{FlightNumber} - {AircraftType}";
         }
     }
